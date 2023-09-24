@@ -1,6 +1,8 @@
 import io
+import re
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.http.response import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
@@ -87,6 +89,11 @@ class ImageViewSet(MediaViewSet):
         if url.endswith("/"):
             url = url[:-1]
         identifier = url.rsplit("/", 1)[1]
+        if not re.match(self.lookup_value_regex, identifier):
+            raise ValidationError(
+                f"Invalid identifier, {identifier}. "
+                f"Make sure to use the full URL of the Openverse image detail page."
+            )
         image = get_object_or_404(Image, identifier=identifier)
         if not (image.height and image.width):
             image_file = requests.get(image.url, headers=self.OEMBED_HEADERS)
